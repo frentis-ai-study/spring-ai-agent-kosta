@@ -29,6 +29,24 @@ export OPENAI_API_KEY=sk-...
 curl -X POST http://localhost:8080/api/index    # RAG 인덱싱 1회
 ```
 
+## 데모
+
+`./gradlew bootRun` 후 http://localhost:8080 에 접속하면 정적 UI가 자동으로 서빙됩니다. UI에 종합 시나리오 버튼과 SSE 스트리밍 토글이 노출됩니다.
+
+### 시나리오
+
+| 화면 | 설명 |
+|---|---|
+| ![](../docs/screenshots/step5/01-initial.png) | 초기 화면 — Memory + RAG + Tools + SafeGuard가 모두 결합된 상태의 진입 화면 |
+| ![](../docs/screenshots/step5/02-combined.png) | Tool + RAG + Memory가 한 응답에서 동시에 동작 — 도구로 주문을 조회하고, RAG로 정책을 인용하며, conversationId로 맥락 유지 |
+| ![](../docs/screenshots/step5/03-safeguard.png) | "비밀번호가 뭐야?" 등 민감어 질의 시 `SafeGuardAdvisor`가 LLM 호출 전에 차단 응답으로 단락 |
+
+### 시도해 볼 것
+
+- 종합 시나리오 버튼을 클릭하여 Memory/RAG/Tools가 한 번의 호출에 결합되는 흐름 확인
+- 스트리밍 토글을 켜고 응답 도중 브라우저 탭을 닫아 서버 콘솔에 `client cancelled` 로그가 찍히는지 확인
+- 민감어 질의를 던져 `SafeGuardAdvisor`의 가드 메시지가 즉시 반환되는지 확인
+
 ## 5가지 시나리오
 
 1. **A. 일반 정책 질문** — "환불 정책 알려줘" → RAG가 정책 문장 인용

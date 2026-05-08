@@ -50,6 +50,24 @@ export OPENAI_API_KEY=sk-...
 curl -X POST http://localhost:8080/api/index
 ```
 
+## 데모
+
+`./gradlew bootRun` 후 http://localhost:8080 에 접속하면 정적 UI가 자동으로 서빙됩니다. UI 상단에 "정책 인덱싱" 버튼이 노출됩니다.
+
+### 시나리오
+
+| 화면 | 설명 |
+|---|---|
+| ![](../docs/screenshots/step4/01-initial.png) | 초기 화면 — 정책 인덱싱 전 상태로, 정책 질문에 답할 근거가 없는 상태 |
+| ![](../docs/screenshots/step4/02-indexed.png) | "정책 인덱싱" 버튼 클릭 후 `./data/vector-store.json` 파일이 생성되고 임베딩이 적재된 상태 |
+| ![](../docs/screenshots/step4/03-rag-refund.png) | "환불 정책 알려줘" 시나리오 실행 시 `RetrievalAugmentationAdvisor`가 정책 문서를 검색하여 인용한 응답 |
+
+### 시도해 볼 것
+
+- 인덱싱 전후로 동일한 정책 질문을 던져 RAG 효과 비교
+- "오늘 날씨 알려줘"처럼 정책 코퍼스 밖 질문을 던져 "모릅니다" 류 응답이 나오는지 확인
+- `application.yml`의 `similarityThreshold`를 0.7로 올린 뒤 검색 누락이 늘어나는지 확인
+
 ## 5가지 체크포인트
 
 1. `/api/index` 호출 후 `./data/vector-store.json` 파일이 생성되고 임베딩이 적재됨

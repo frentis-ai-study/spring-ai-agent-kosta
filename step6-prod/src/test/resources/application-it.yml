@@ -1,0 +1,36 @@
+spring:
+  # 통합 테스트 격리: 별도 H2 in-memory DB 사용 (운영 ./data/agentdb와 분리)
+  datasource:
+    url: jdbc:h2:mem:agentdb-it;MODE=PostgreSQL;DB_CLOSE_DELAY=-1
+    driver-class-name: org.h2.Driver
+    username: agent
+    password: agent
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+    database-platform: org.hibernate.dialect.H2Dialect
+    show-sql: false
+  sql:
+    init:
+      mode: never
+  ai:
+    openai:
+      # 환경변수에서 실 키 주입
+      api-key: ${OPENAI_API_KEY:}
+      chat:
+        options:
+          model: gpt-5.4-mini
+          temperature: 0.0
+      embedding:
+        options:
+          model: text-embedding-3-small
+    chat:
+      memory:
+        repository:
+          jdbc:
+            initialize-schema: always
+
+logging:
+  level:
+    org.springframework.ai: WARN
+    com.kosta.agent: INFO

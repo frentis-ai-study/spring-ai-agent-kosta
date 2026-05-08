@@ -29,6 +29,23 @@ export OPENAI_API_KEY=sk-...
 ./gradlew bootRun
 ```
 
+## 데모
+
+`./gradlew bootRun` 후 http://localhost:8080 에 접속하면 정적 UI가 자동으로 서빙됩니다.
+
+### 시나리오
+
+| 화면 | 설명 |
+|---|---|
+| ![](../docs/screenshots/step1/01-initial.png) | 초기 화면 — 메시지 입력창과 응답 영역만 있는 가장 단순한 챗봇 UI |
+| ![](../docs/screenshots/step1/02-response.png) | 한국어 메시지 전송 후 ChatClient가 격식체로 응답한 모습 |
+
+### 시도해 볼 것
+
+- 입력창에 한국어 질문을 입력하고 전송하여 응답 확인
+- 같은 질문을 두 번 보내 `temperature: 0.0` 설정 시 동일 응답이 오는지 확인
+- 새로고침 후 같은 질문을 다시 보내면 이전 발화를 기억하지 못하는 한계 확인 (step2에서 해결)
+
 ## 5가지 체크포인트
 
 1. `OPENAI_API_KEY` 미설정 시 부팅 단계에서 명시적 경고가 보인다 (또는 첫 호출에서 401)

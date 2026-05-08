@@ -36,6 +36,23 @@ export OPENAI_API_KEY=sk-...
 ./gradlew bootRun
 ```
 
+## 데모
+
+`./gradlew bootRun` 후 http://localhost:8080 에 접속하면 정적 UI가 자동으로 서빙됩니다. UI에 시나리오 버튼이 노출됩니다.
+
+### 시나리오
+
+| 화면 | 설명 |
+|---|---|
+| ![](../docs/screenshots/step3/01-initial.png) | 초기 화면 — "1. Tool — alice 주문" 버튼이 노출된 상태 |
+| ![](../docs/screenshots/step3/02-tool-alice.png) | 시나리오 버튼 클릭 시 `findCustomer`/`getRecentOrders` 도구가 자동 실행되어 GOLD 등급 alice의 주문이 자연어로 요약됨 |
+
+### 시도해 볼 것
+
+- "1. Tool — alice 주문" 버튼을 클릭하여 LLM이 도구를 선택/연쇄 호출하는 흐름 확인
+- "주문 ORD-1을 취소해줘"를 보내 `cancelOrder`가 트랜잭션 내에서 상태를 CANCELLED로 갱신하는지 확인
+- 이미 DELIVERED 상태인 주문 취소를 시도하여 도구 메서드의 가드 분기 응답 확인
+
 ## 5가지 체크포인트
 
 1. "alice@example.com 고객 정보 알려줘" 요청에 `findCustomer` 도구가 호출되어 GOLD 등급 정보 반환

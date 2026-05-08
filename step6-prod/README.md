@@ -35,6 +35,27 @@ export OPENAI_API_KEY=sk-...
 ./gradlew bootRun
 ```
 
+## 데모
+
+`./gradlew bootRun` 후 http://localhost:8080 에 접속하면 정적 UI가 자동으로 서빙됩니다. UI에는 운영 시나리오 버튼과 finish_reason/warning 표시 영역이 노출됩니다.
+
+### 시나리오
+
+| 화면 | 설명 |
+|---|---|
+| ![](../docs/screenshots/step6/01-initial.png) | 초기 화면 — 운영 안정화 요소가 결합된 상태의 진입 화면 |
+| ![](../docs/screenshots/step6/02-indexed.png) | "정책 인덱싱" 실행 후 RAG 인덱스가 적재된 상태 |
+| ![](../docs/screenshots/step6/03-tool-alice.png) | Tool Calling 시나리오 — `findCustomer` 도구가 호출되어 alice의 주문 요약을 응답에 포함 |
+| ![](../docs/screenshots/step6/04-rag-refund.png) | RAG 시나리오 — 환불 정책 질의에 대해 인덱싱된 정책 문서를 인용하여 응답 |
+| ![](../docs/screenshots/step6/05-memory-recall.png) | Memory 시나리오 — 같은 conversationId로 이전 발화 회상 확인 |
+| ![](../docs/screenshots/step6/06-safeguard-blocked.png) | `ModerationInputAdvisor`가 위해 콘텐츠를 입력 단계에서 차단하고 warning 표시가 노출된 상태 |
+
+### 시도해 볼 것
+
+- 위해 콘텐츠 시나리오를 실행하여 LLM 호출 없이 차단되는지(메트릭 카운터 변화 포함) 확인
+- 정상 응답 시 `finishReason: stop`이, 토큰 한도 초과 시 `warning` 키가 노출되는지 응답 페이로드 확인
+- `curl http://localhost:8080/actuator/prometheus | grep -E "openai|resilience4j"`로 Retry/CircuitBreaker 메트릭 노출 확인
+
 ## 운영 가이드 5가지 체크포인트
 
 1. **메트릭** — `curl http://localhost:8080/actuator/prometheus | grep openai`로 CircuitBreaker/Retry 메트릭 확인

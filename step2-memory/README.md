@@ -29,6 +29,24 @@ export OPENAI_API_KEY=sk-...
 ./gradlew bootRun
 ```
 
+## 데모
+
+`./gradlew bootRun` 후 http://localhost:8080 에 접속하면 정적 UI가 자동으로 서빙됩니다. UI 상단에 `conversationId` 입력 필드가 노출됩니다.
+
+### 시나리오
+
+| 화면 | 설명 |
+|---|---|
+| ![](../docs/screenshots/step2/01-initial.png) | 초기 화면 — 기본 conversationId(`u-1`)가 설정된 상태 |
+| ![](../docs/screenshots/step2/02-name-set.png) | "제 이름은 앤디입니다."를 보낸 직후 — 이력이 ChatMemory에 적재됨 |
+| ![](../docs/screenshots/step2/03-name-recall.png) | 같은 conversationId로 "제 이름이 뭐였죠?" 질의 시 이전 발화 회상 |
+
+### 시도해 볼 것
+
+- 같은 `conversationId`로 이름을 알려준 뒤 회상 질문하여 메모리 동작 확인
+- `conversationId`를 `u-2`로 바꾼 후 같은 질문을 던져 세션이 격리되는지 확인
+- 같은 세션에서 11개 이상 메시지를 주고받아 슬라이딩 윈도우(10건) 누락이 발생하는지 확인
+
 ## 5가지 체크포인트
 
 1. 부팅 후 H2에 `SPRING_AI_CHAT_MEMORY` 테이블이 자동 생성된다 (H2 콘솔이나 `INFORMATION_SCHEMA.TABLES`로 확인)
