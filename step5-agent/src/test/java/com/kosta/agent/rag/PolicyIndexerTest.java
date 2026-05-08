@@ -2,12 +2,13 @@ package com.kosta.agent.rag;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 import org.springframework.ai.document.Document;
 import org.springframework.ai.vectorstore.VectorStore;
-import org.springframework.core.io.ByteArrayResource;
-import org.springframework.core.io.Resource;
 
 import java.lang.reflect.Field;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -19,43 +20,38 @@ import static org.mockito.Mockito.verify;
 /**
  * PolicyIndexer 단위 테스트.
  *
- * 멱등성 검증의 한계:
- *   PolicyIndexer.indexAll()은 호출 시마다 청크를 add()로 적재하므로,
- *   같은 청크를 두 번 적재하면 VectorStore에는 중복 저장된다.
- *   "두 번 실행해도 중복 안 생기는지"는 VectorStore가 ID를 기반으로 upsert를 보장해야 한다.
- *
- *   본 테스트는 다음을 검증한다:
- *   1) 호출 시 청크가 생성되고 vectorStore.add가 호출된다
- *   2) 동일 입력으로 두 번 호출 시 생성되는 Document의 ID가 동일하다 (멱등성의 기반)
- *
- *   실제 pgvector upsert 동작은 step5/6 통합 테스트(@Testcontainers)에서 검증한다.
+ * 외부 폴더 패턴 검증:
+ *   1) 외부 폴더에 .txt/.md 파일이 있으면 우선 사용한다
+ *   2) 외부 폴더가 비어 있거나 없으면 classpath:docs/*.txt 로 fallback한다
+ *   3) 동일 입력으로 두 번 실행해도 생성되는 Document 내용이 결정적이다
  */
 class PolicyIndexerTest {
 
+    @TempDir
+    Path tempDir;
+
     private VectorStore vectorStore;
-    private Resource[] docs;
 
     @BeforeEach
     void setUp() {
         vectorStore = mock(VectorStore.class);
-        docs = new Resource[] {
-                new ByteArrayResource("환불 정책: 7일 이내 미사용 상품에 한해 환불 가능합니다.".getBytes()) {
-                    @Override public String getFilename() { return "refund.txt"; }
-                },
-                new ByteArrayResource("배송 정책: 결제 후 1-3 영업일 이내 발송됩니다.".getBytes()) {
-                    @Override public String getFilename() { return "shipping.txt"; }
-                }
-        };
     }
 
-    private PolicyIndexer newIndexer() throws Exception {
-        PolicyIndexer indexer = new PolicyIndexer(vectorStore, docs);
-        return indexer;
+    private PolicyIndexer newIndexer(Path policiesPath) {
+        return new PolicyIndexer(
+                vectorStore,
+                policiesPath.toString(),
+                tempDir.resolve("vector-store.json").toString());
     }
 
     @Test
-    void indexAll_호출_시_VectorStore에_청크가_적재된다() throws Exception {
-        PolicyIndexer indexer = newIndexer();
+    void 외부_폴더에_파일이_있으면_우선_사용한다() throws Exception {
+        Files.writeString(tempDir.resolve("refund.txt"),
+                "환불 정책: 7일 이내 미사용 상품에 한해 환불 가능합니다.");
+        Files.writeString(tempDir.resolve("shipping.md"),
+                "# 배송 정책\n결제 후 1-3 영업일 이내 발송됩니다.");
+
+        PolicyIndexer indexer = newIndexer(tempDir);
         int chunks = indexer.indexAll();
 
         assertThat(chunks).isGreaterThan(0);
@@ -63,15 +59,28 @@ class PolicyIndexerTest {
     }
 
     @Test
-    void 동일_입력으로_두_번_호출하면_생성되는_Document_ID가_동일하다() throws Exception {
-        PolicyIndexer first = newIndexer();
-        PolicyIndexer second = newIndexer();
+    void 외부_폴더가_비어있으면_classpath로_fallback한다() {
+        // tempDir 자체는 존재하나 정책 파일이 없는 상태
+        PolicyIndexer indexer = newIndexer(tempDir);
+        int chunks = indexer.indexAll();
 
-        // 첫 번째 호출의 청크 캡처
+        // classpath:docs/*.txt 의 기본 정책 3개가 인덱싱되어야 함 (chunks > 0)
+        assertThat(chunks).isGreaterThan(0);
+        verify(vectorStore, times(1)).add(org.mockito.ArgumentMatchers.anyList());
+    }
+
+    @Test
+    void 동일_입력으로_두_번_호출하면_생성되는_Document가_결정적이다() throws Exception {
+        Files.writeString(tempDir.resolve("policy.txt"),
+                "환불 정책: 7일 이내 미사용 상품에 한해 환불 가능합니다.");
+
         VectorStore vs1 = mock(VectorStore.class);
         VectorStore vs2 = mock(VectorStore.class);
-        setVectorStore(first, vs1);
-        setVectorStore(second, vs2);
+
+        PolicyIndexer first = new PolicyIndexer(
+                vs1, tempDir.toString(), tempDir.resolve("v1.json").toString());
+        PolicyIndexer second = new PolicyIndexer(
+                vs2, tempDir.toString(), tempDir.resolve("v2.json").toString());
 
         first.indexAll();
         second.indexAll();
@@ -90,17 +99,10 @@ class PolicyIndexerTest {
         List<Document> chunks2 = (List<Document>) captor2.getValue();
 
         assertThat(chunks1).hasSameSizeAs(chunks2);
-        // Document 내용이 동일하면 ID도 결정적이어야 한다 (TextReader/TokenTextSplitter는 동일 입력 → 동일 출력)
-        List<String> ids1 = new ArrayList<>();
-        List<String> ids2 = new ArrayList<>();
-        for (Document d : chunks1) ids1.add(d.getText());
-        for (Document d : chunks2) ids2.add(d.getText());
-        assertThat(ids1).isEqualTo(ids2);
-    }
-
-    private void setVectorStore(PolicyIndexer indexer, VectorStore vs) throws Exception {
-        Field f = PolicyIndexer.class.getDeclaredField("vectorStore");
-        f.setAccessible(true);
-        f.set(indexer, vs);
+        List<String> texts1 = new ArrayList<>();
+        List<String> texts2 = new ArrayList<>();
+        for (Document d : chunks1) texts1.add(d.getText());
+        for (Document d : chunks2) texts2.add(d.getText());
+        assertThat(texts1).isEqualTo(texts2);
     }
 }
