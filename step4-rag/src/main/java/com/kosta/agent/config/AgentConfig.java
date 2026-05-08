@@ -6,11 +6,15 @@ import org.springframework.ai.chat.client.advisor.MessageChatMemoryAdvisor;
 import org.springframework.ai.chat.memory.ChatMemory;
 import org.springframework.ai.chat.memory.MessageWindowChatMemory;
 import org.springframework.ai.chat.memory.repository.jdbc.JdbcChatMemoryRepository;
+import org.springframework.ai.embedding.EmbeddingModel;
 import org.springframework.ai.rag.advisor.RetrievalAugmentationAdvisor;
 import org.springframework.ai.rag.retrieval.search.VectorStoreDocumentRetriever;
+import org.springframework.ai.vectorstore.SimpleVectorStore;
 import org.springframework.ai.vectorstore.VectorStore;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+
+import java.io.File;
 
 /**
  * step4: ChatClient + Memory + Tool Calling + RAG.
@@ -28,6 +32,21 @@ public class AgentConfig {
             - 사용자가 본인의 주문/고객 정보를 자연어로 요청하면 즉시 findCustomer 또는 getRecentOrders 도구를 호출하여 답변하십시오.
             - 정책/환불/반품 관련 질문은 검색된 문서 내용을 기반으로 답변하십시오.
             """;
+
+    /**
+     * 파일 기반 SimpleVectorStore.
+     * - 외부 벡터 DB(예: pgvector) 없이 로컬 파일에 임베딩을 영속화한다
+     * - 운영에서는 application.yml과 의존성만 바꿔 pgvector·Redis·Supabase 등으로 무손실 전환 가능
+     */
+    @Bean
+    public VectorStore vectorStore(EmbeddingModel embeddingModel) {
+        SimpleVectorStore store = SimpleVectorStore.builder(embeddingModel).build();
+        File persistFile = new File("./data/vector-store.json");
+        if (persistFile.exists()) {
+            store.load(persistFile);
+        }
+        return store;
+    }
 
     @Bean
     public ChatMemory chatMemory(JdbcChatMemoryRepository repository) {

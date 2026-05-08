@@ -24,7 +24,7 @@ dependencies {
     implementation("org.springframework.boot:spring-boot-starter-actuator")
     implementation("org.springframework.boot:spring-boot-starter-data-jpa")
     implementation("org.springframework.boot:spring-boot-starter-web")
-    runtimeOnly("org.postgresql:postgresql")
+    runtimeOnly("com.h2database:h2")
 
     // Spring AI Chat (OpenAI) only
     implementation("org.springframework.ai:spring-ai-starter-model-openai")

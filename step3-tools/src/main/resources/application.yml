@@ -6,9 +6,10 @@ spring:
     name: spring-ai-agent-kosta-step3
 
   datasource:
-    url: jdbc:postgresql://localhost:5432/agentdb
+    url: jdbc:h2:file:./data/agentdb;MODE=PostgreSQL;DB_CLOSE_DELAY=-1;AUTO_SERVER=TRUE
+    driver-class-name: org.h2.Driver
     username: agent
-    password: ${POSTGRES_PASSWORD:agent}
+    password: agent
 
   jpa:
     hibernate:

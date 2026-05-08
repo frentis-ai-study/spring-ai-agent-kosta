@@ -25,13 +25,13 @@ dependencies {
     implementation("org.springframework.boot:spring-boot-starter-actuator")
     implementation("org.springframework.boot:spring-boot-starter-data-jpa")
     implementation("org.springframework.boot:spring-boot-starter-web")
-    runtimeOnly("org.postgresql:postgresql")
+    runtimeOnly("com.h2database:h2")
 
     // Spring AI - Chat (OpenAI)
     implementation("org.springframework.ai:spring-ai-starter-model-openai")
 
     // Spring AI - Vector Store (pgvector)
-    implementation("org.springframework.ai:spring-ai-starter-vector-store-pgvector")
+    
 
     // Spring AI - Chat Memory (JDBC)
     implementation("org.springframework.ai:spring-ai-starter-model-chat-memory-repository-jdbc")

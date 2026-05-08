@@ -3,6 +3,9 @@
 **/build/
 **/out/
 
+# H2 / SimpleVectorStore 영속 데이터 (강의 실습 산출물)
+**/data/
+
 # IDE
 .idea/
 *.iml
