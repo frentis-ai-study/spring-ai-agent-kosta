@@ -118,6 +118,30 @@ finish_reason 표시, SafeGuard 차단 시 warning, /actuator 링크.
 |---|---|---|---|
 | ![](docs/screenshots/step6/03-tool-alice.png) | ![](docs/screenshots/step6/04-rag-refund.png) | ![](docs/screenshots/step6/05-memory-recall.png) | ![](docs/screenshots/step6/06-safeguard-blocked.png) |
 
+## 환경 검증 (강의 시작 전 1분)
+
+```bash
+java -version              # openjdk version "21.0.x" 확인
+./gradlew --version         # Gradle 8.x · JVM 21
+echo $OPENAI_API_KEY        # 강사 안내값이 보여야 함
+lsof -i :8080               # 출력 없음이어야 함 (이미 사용 중이면 종료)
+```
+
+`.zshrc`에 영구 등록하시려면 `echo 'export OPENAI_API_KEY=sk-...' >> ~/.zshrc` 실행 후 새 터미널에서 시작하시면 됩니다.
+
+## 트러블슈팅 (자주 보는 이슈)
+
+| 증상 | 원인 | 해결 |
+|---|---|---|
+| `401 Unauthorized` | `OPENAI_API_KEY` 미설정 또는 만료 | `export OPENAI_API_KEY=sk-...` 재설정 후 `./gradlew bootRun` 재시작 |
+| `Port 8080 already in use` | 이전 step 프로세스가 종료되지 않음 | `lsof -ti :8080 \| xargs kill -9` 후 다시 실행 |
+| `Could not find or load main class` | JDK 21이 아닌 다른 버전 활성화 | `java -version` 확인, SDKMAN 또는 IDE Project SDK 설정 점검 |
+| `Connection refused` (api.openai.com) | 사내 프록시·방화벽 차단 | 모바일 핫스팟으로 우회하거나 강사에게 프록시 설정 문의 |
+| `BUILD FAILED` 또는 캐시 손상 | 이전 빌드 잔여물 | `rm -rf build/ .gradle/` 후 `./gradlew clean bootRun` |
+| 한글 깨짐 (Mojibake) | 기본 인코딩 비-UTF-8 | `export JAVA_TOOL_OPTIONS='-Dfile.encoding=UTF-8'` |
+| RAG가 답을 못 찾음 | 인덱싱 미실행 | `curl -X POST localhost:8080/api/index` 또는 UI 인덱싱 버튼 |
+| 임베딩 차원 mismatch | 모델 변경 후 기존 vector-store.json 잔존 | `rm -f data/vector-store.json` 후 재인덱싱 |
+
 ## 라이선스 / 사용 안내
 
 본 저장소는 KOSTA 강의 수강생 학습용으로 작성되었으며, 운영 환경 적용 시에는 보안/SecurityContext 처리, 시크릿 관리, 모더레이션 정책을 환경에 맞게 보강하여야 합니다.
