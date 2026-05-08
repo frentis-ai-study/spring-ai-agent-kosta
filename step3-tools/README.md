@@ -24,10 +24,14 @@
 LLM이 `callerCustomerId`를 임의로 변조할 가능성이 있으므로, 운영 코드에서는 반드시
 도구 메서드 내부에서 SecurityContext를 직접 조회하여 본인 ID로 덮어써야 합니다.
 
+## 사전 준비
+
+- Java 21 + `OPENAI_API_KEY` 환경변수만 있으면 됩니다.
+- DB는 H2 file (`./data/agentdb`)로 자동 생성됩니다.
+
 ## 실행
 
 ```bash
-docker compose up -d
 export OPENAI_API_KEY=sk-...
 ./gradlew bootRun
 ```
@@ -43,3 +47,7 @@ export OPENAI_API_KEY=sk-...
 ## 한계
 
 - 정책 문서(반품 규정 등)는 모르는 상태이므로 환각 위험이 있다 (step4에서 RAG 도입)
+
+## 운영 환경 전환 안내
+
+`application.yml`의 `datasource`를 PostgreSQL로 교체하면 동일한 코드가 그대로 동작합니다. 이는 Spring의 PSA(Portable Service Abstraction) 가치 그 자체입니다.

@@ -17,10 +17,14 @@ step0의 도메인 위에 Spring AI ChatClient를 추가하여 가장 단순한 
 | 변경 | `build.gradle.kts` | `spring-ai-starter-model-openai` 추가 (Spring AI 1.1.5, Maven Central) |
 | 변경 | `application.yml` | `spring.ai.openai.*` 추가 |
 
+## 사전 준비
+
+- Java 21 + `OPENAI_API_KEY` 환경변수만 있으면 됩니다.
+- DB는 H2 file (`./data/agentdb`)로 자동 생성됩니다.
+
 ## 실행
 
 ```bash
-docker compose up -d
 export OPENAI_API_KEY=sk-...
 ./gradlew bootRun
 ```
@@ -37,3 +41,7 @@ export OPENAI_API_KEY=sk-...
 
 - 같은 conversation으로 두 번 호출해도 이전 발화를 기억하지 못한다 (step2에서 해결)
 - 도구 호출 불가 (step3에서 해결)
+
+## 운영 환경 전환 안내
+
+`application.yml`의 `datasource`를 PostgreSQL로 교체하면 동일한 코드가 그대로 동작합니다. 이는 Spring의 PSA(Portable Service Abstraction) 가치 그 자체입니다.

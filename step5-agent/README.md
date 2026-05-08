@@ -16,10 +16,14 @@ SSE 스트리밍 엔드포인트(`timeout`, `doOnCancel` 포함)를 추가합니
 | 변경 | `config/AgentConfig.java` | `SafeGuardAdvisor` + `SimpleLoggerAdvisor` 추가, 통합 시스템 프롬프트 |
 | 변경 | `web/AgentController.java` | `GET /api/agent/stream` 추가 (SSE, timeout, doOnCancel) |
 
+## 사전 준비
+
+- Java 21 + `OPENAI_API_KEY` 환경변수만 있으면 됩니다.
+- DB는 H2 file (`./data/agentdb`), 벡터 인덱스는 `./data/vector-store.json` 파일로 자동 관리됩니다.
+
 ## 실행
 
 ```bash
-docker compose up -d
 export OPENAI_API_KEY=sk-...
 ./gradlew bootRun
 curl -X POST http://localhost:8080/api/index    # RAG 인덱싱 1회
@@ -37,6 +41,10 @@ curl -X POST http://localhost:8080/api/index    # RAG 인덱싱 1회
 
 - `SafeGuardAdvisor`는 단순 키워드 매칭이므로 변형 우회 가능. 운영은 OpenAI Moderation API를 사용 (step6 참조).
 - `SimpleLoggerAdvisor`는 평문 프롬프트/응답을 로그에 남기므로 PII 마스킹 필요.
+
+## 운영 환경 전환 안내
+
+`application.yml`의 `datasource`를 PostgreSQL로, VectorStore 의존성을 `spring-ai-starter-vector-store-pgvector`로 바꾸면 동일한 코드가 그대로 동작합니다. 이는 Spring의 PSA(Portable Service Abstraction) 가치 그 자체입니다.
 
 ## 다음 단계
 

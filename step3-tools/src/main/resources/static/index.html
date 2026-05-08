@@ -1,0 +1,127 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Spring AI Agent · step3 tools</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-slate-50 text-slate-800">
+  <div class="max-w-5xl mx-auto p-6 grid grid-cols-1 lg:grid-cols-[1fr_280px] gap-4">
+    <div>
+      <header class="mb-4">
+        <div class="text-xs font-semibold tracking-widest text-indigo-600 uppercase">STEP 3 · Tool Calling</div>
+        <h1 class="text-2xl font-bold mt-1">Spring AI Agent — 도구 호출</h1>
+        <p class="text-sm text-slate-500 mt-1">
+          @Tool 어노테이션으로 등록된 OrderTools를 LLM이 자동으로 호출합니다.
+          DB 조회/변경이 자연어 한 줄로 이뤄집니다.
+        </p>
+      </header>
+
+      <section class="bg-white rounded-2xl shadow-sm border border-slate-200 p-4 mb-4">
+        <div class="flex items-center gap-3">
+          <label class="text-sm font-medium text-slate-700">conversationId</label>
+          <input id="cid" class="flex-1 border border-slate-300 rounded-lg px-3 py-1.5 text-sm font-mono" />
+          <button id="reset" class="text-xs text-slate-500 hover:text-indigo-600">새 대화</button>
+        </div>
+      </section>
+
+      <section class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
+        <div id="history" class="space-y-3 mb-4 max-h-[480px] overflow-y-auto"></div>
+        <div class="flex gap-2">
+          <input id="message" type="text"
+            class="flex-1 border border-slate-300 rounded-lg p-3 text-base focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            placeholder="예: alice@example.com 고객의 주문 보여줘" />
+          <button id="send"
+            class="px-5 py-3 bg-indigo-600 text-white rounded-lg font-semibold hover:bg-indigo-700 disabled:opacity-50">
+            전송
+          </button>
+        </div>
+      </section>
+    </div>
+
+    <aside class="bg-white rounded-2xl shadow-sm border border-slate-200 p-4 lg:sticky lg:top-6 self-start">
+      <div class="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-3">빠른 시나리오</div>
+      <div class="space-y-2">
+        <button data-msg="alice@example.com 고객의 최근 주문 보여주세요." class="scn w-full text-left text-sm bg-indigo-50 text-indigo-700 rounded-lg px-3 py-2 hover:bg-indigo-100">
+          1. alice 주문 조회
+        </button>
+        <button data-msg="bob@example.com 고객의 주문 중 PENDING 상태인 것을 취소해주세요." class="scn w-full text-left text-sm bg-indigo-50 text-indigo-700 rounded-lg px-3 py-2 hover:bg-indigo-100">
+          2. bob 주문 취소
+        </button>
+        <button data-msg="앞에서 본 alice 고객의 PAID 상태 주문이 뭐였죠?" class="scn w-full text-left text-sm bg-indigo-50 text-indigo-700 rounded-lg px-3 py-2 hover:bg-indigo-100">
+          3. Memory + Tool 결합
+        </button>
+      </div>
+      <div class="mt-4 text-[11px] text-slate-500 leading-relaxed">
+        도구 호출은 응답에 자연스럽게 녹아 나옵니다.
+        AgentController 로그에서 어떤 도구가 어떤 인자로 호출됐는지 확인할 수 있습니다.
+      </div>
+    </aside>
+  </div>
+
+<script>
+  const cidEl = document.getElementById('cid');
+  const messageEl = document.getElementById('message');
+  const send = document.getElementById('send');
+  const reset = document.getElementById('reset');
+  const history = document.getElementById('history');
+
+  function newCid() { return 'web-' + Date.now(); }
+  cidEl.value = newCid();
+  reset.addEventListener('click', () => { cidEl.value = newCid(); history.innerHTML = ''; });
+
+  function addBubble(role, text, meta) {
+    const isUser = role === 'user';
+    const col = document.createElement('div');
+    col.className = isUser ? 'flex flex-col items-end' : 'flex flex-col items-start';
+    const bubble = document.createElement('div');
+    bubble.className = (isUser ? 'bg-indigo-600 text-white' : 'bg-slate-100 text-slate-800 border border-slate-200')
+      + ' max-w-[80%] rounded-2xl px-4 py-2.5 whitespace-pre-wrap text-sm';
+    bubble.textContent = text;
+    col.appendChild(bubble);
+    if (meta) {
+      const m = document.createElement('div');
+      m.className = 'text-[10px] text-slate-400 mt-1';
+      m.textContent = meta;
+      col.appendChild(m);
+    }
+    history.appendChild(col);
+    history.scrollTop = history.scrollHeight;
+  }
+
+  async function sendMessage(text) {
+    addBubble('user', text);
+    send.disabled = true;
+    const t0 = performance.now();
+    try {
+      const res = await fetch('/api/agent', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message: text, conversationId: cidEl.value })
+      });
+      const data = await res.json();
+      addBubble('ai', data.content || JSON.stringify(data),
+        `cid=${data.conversationId || cidEl.value} · ${(performance.now()-t0).toFixed(0)}ms`);
+    } catch (e) {
+      addBubble('ai', '에러: ' + e.message);
+    } finally {
+      send.disabled = false;
+      messageEl.focus();
+    }
+  }
+
+  send.addEventListener('click', () => {
+    const m = messageEl.value.trim();
+    if (!m) return;
+    messageEl.value = '';
+    sendMessage(m);
+  });
+  messageEl.addEventListener('keydown', (e) => { if (e.key === 'Enter') send.click(); });
+
+  document.querySelectorAll('.scn').forEach(b => {
+    b.addEventListener('click', () => sendMessage(b.dataset.msg));
+  });
+</script>
+</body>
+</html>

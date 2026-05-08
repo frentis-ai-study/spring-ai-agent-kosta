@@ -17,17 +17,21 @@
 | 변경 | `build.gradle.kts` | `spring-ai-starter-model-chat-memory-repository-jdbc` 추가 |
 | 변경 | `application.yml` | `spring.ai.chat.memory.repository.jdbc.initialize-schema: always` |
 
+## 사전 준비
+
+- Java 21 + `OPENAI_API_KEY` 환경변수만 있으면 됩니다.
+- ChatMemory 테이블은 H2 file DB(`./data/agentdb`)에 자동 생성됩니다.
+
 ## 실행
 
 ```bash
-docker compose up -d
 export OPENAI_API_KEY=sk-...
 ./gradlew bootRun
 ```
 
 ## 5가지 체크포인트
 
-1. 부팅 후 PostgreSQL에 `SPRING_AI_CHAT_MEMORY` 테이블이 자동 생성된다 (`\d` 로 확인)
+1. 부팅 후 H2에 `SPRING_AI_CHAT_MEMORY` 테이블이 자동 생성된다 (H2 콘솔이나 `INFORMATION_SCHEMA.TABLES`로 확인)
 2. 같은 `conversationId`로 두 번 호출하면 이전 질문을 기억한다
    - 1번째: `{"message":"제 이름은 앤디입니다.","conversationId":"u-1"}`
    - 2번째: `{"message":"제 이름이 뭐였죠?","conversationId":"u-1"}`
@@ -38,3 +42,7 @@ export OPENAI_API_KEY=sk-...
 ## 한계
 
 - 도구를 호출할 수 없으므로 "내 주문 취소해줘" 요청은 환각 응답을 한다 (step3에서 해결)
+
+## 운영 환경 전환 안내
+
+`application.yml`의 `datasource`를 PostgreSQL로 교체하면 동일한 코드가 그대로 동작합니다. JDBC ChatMemory 스키마가 PostgreSQL에 동일하게 생성됩니다. 이는 Spring의 PSA(Portable Service Abstraction) 가치 그 자체입니다.

@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Spring AI Agent · step1 chat</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-slate-50 text-slate-800">
+  <div class="max-w-3xl mx-auto p-6">
+    <header class="mb-6">
+      <div class="text-xs font-semibold tracking-widest text-indigo-600 uppercase">STEP 1 · ChatClient</div>
+      <h1 class="text-2xl font-bold mt-1">Spring AI Agent — 단발 챗봇</h1>
+      <p class="text-sm text-slate-500 mt-1">
+        ChatClient.prompt().user(...).call().content() 한 줄로 LLM에 한국어 질문을 보냅니다.
+        대화 이력은 아직 없습니다 (step2에서 추가).
+      </p>
+    </header>
+
+    <section class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
+      <label class="block text-sm font-medium text-slate-700 mb-2">메시지</label>
+      <textarea id="message" rows="3"
+        class="w-full border border-slate-300 rounded-lg p-3 text-base focus:outline-none focus:ring-2 focus:ring-indigo-500"
+        placeholder="예: Spring AI를 한 문장으로 설명해주세요."></textarea>
+
+      <div class="flex justify-end mt-3">
+        <button id="send"
+          class="px-5 py-2.5 bg-indigo-600 text-white rounded-lg font-semibold hover:bg-indigo-700 disabled:opacity-50">
+          전송
+        </button>
+      </div>
+
+      <div id="result" class="hidden mt-6">
+        <div class="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-2">AI 응답</div>
+        <div id="content" class="bg-slate-50 border border-slate-200 rounded-lg p-4 whitespace-pre-wrap text-base"></div>
+        <div id="latency" class="text-xs text-slate-400 mt-2 text-right"></div>
+      </div>
+    </section>
+  </div>
+
+<script>
+  const send = document.getElementById('send');
+  const messageEl = document.getElementById('message');
+  const resultEl = document.getElementById('result');
+  const contentEl = document.getElementById('content');
+  const latencyEl = document.getElementById('latency');
+
+  send.addEventListener('click', async () => {
+    const message = messageEl.value.trim();
+    if (!message) return;
+    send.disabled = true;
+    contentEl.textContent = '응답 대기 중...';
+    resultEl.classList.remove('hidden');
+    const t0 = performance.now();
+    try {
+      const res = await fetch('/api/agent', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message })
+      });
+      const data = await res.json();
+      contentEl.textContent = data.content || JSON.stringify(data);
+      latencyEl.textContent = `latency ${(performance.now() - t0).toFixed(0)}ms`;
+    } catch (e) {
+      contentEl.textContent = '에러: ' + e.message;
+    } finally {
+      send.disabled = false;
+    }
+  });
+
+  messageEl.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) send.click();
+  });
+</script>
+</body>
+</html>

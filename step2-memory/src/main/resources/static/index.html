@@ -1,0 +1,123 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Spring AI Agent · step2 memory</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-slate-50 text-slate-800">
+  <div class="max-w-3xl mx-auto p-6">
+    <header class="mb-4">
+      <div class="text-xs font-semibold tracking-widest text-indigo-600 uppercase">STEP 2 · ChatMemory</div>
+      <h1 class="text-2xl font-bold mt-1">Spring AI Agent — 대화 이력 유지</h1>
+      <p class="text-sm text-slate-500 mt-1">
+        같은 conversationId로 두 번 이상 호출하면 이전 발화를 기억합니다.
+        H2 file의 SPRING_AI_CHAT_MEMORY 테이블에 저장됩니다.
+      </p>
+    </header>
+
+    <section class="bg-white rounded-2xl shadow-sm border border-slate-200 p-4 mb-4">
+      <div class="flex items-center gap-3">
+        <label class="text-sm font-medium text-slate-700">conversationId</label>
+        <input id="cid" class="flex-1 border border-slate-300 rounded-lg px-3 py-1.5 text-sm font-mono"
+               value="" placeholder="비워두면 자동 생성" />
+        <button id="reset" class="text-xs text-slate-500 hover:text-indigo-600">새 대화</button>
+      </div>
+    </section>
+
+    <section class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
+      <div id="history" class="space-y-3 mb-4 max-h-[480px] overflow-y-auto"></div>
+
+      <div class="flex gap-2">
+        <input id="message" type="text"
+          class="flex-1 border border-slate-300 rounded-lg p-3 text-base focus:outline-none focus:ring-2 focus:ring-indigo-500"
+          placeholder="메시지를 입력하세요..." />
+        <button id="send"
+          class="px-5 py-3 bg-indigo-600 text-white rounded-lg font-semibold hover:bg-indigo-700 disabled:opacity-50">
+          전송
+        </button>
+      </div>
+
+      <details class="mt-4 text-xs text-slate-500">
+        <summary class="cursor-pointer">시연 시나리오</summary>
+        <ol class="list-decimal ml-5 mt-2 space-y-1">
+          <li>"제 이름은 김철수입니다." 전송</li>
+          <li>"제 이름이 뭐였죠?" 같은 cid로 다시 전송 → 김철수 회상</li>
+          <li>"새 대화" 버튼 클릭 후 같은 질문 → 회상 안 됨 (cid 격리 확인)</li>
+        </ol>
+      </details>
+    </section>
+  </div>
+
+<script>
+  const cidEl = document.getElementById('cid');
+  const messageEl = document.getElementById('message');
+  const send = document.getElementById('send');
+  const reset = document.getElementById('reset');
+  const history = document.getElementById('history');
+
+  function newCid() { return 'web-' + Date.now(); }
+  if (!cidEl.value) cidEl.value = newCid();
+
+  reset.addEventListener('click', () => {
+    cidEl.value = newCid();
+    history.innerHTML = '';
+  });
+
+  function addBubble(role, text, meta) {
+    const wrap = document.createElement('div');
+    const bubble = document.createElement('div');
+    const isUser = role === 'user';
+    wrap.className = isUser ? 'flex justify-end' : 'flex justify-start';
+    bubble.className = (isUser
+      ? 'bg-indigo-600 text-white'
+      : 'bg-slate-100 text-slate-800 border border-slate-200')
+      + ' max-w-[80%] rounded-2xl px-4 py-2.5 whitespace-pre-wrap text-sm';
+    bubble.textContent = text;
+    wrap.appendChild(bubble);
+    if (meta) {
+      const m = document.createElement('div');
+      m.className = 'text-[10px] text-slate-400 mt-1 ' + (isUser ? 'text-right' : 'text-left');
+      m.textContent = meta;
+      const col = document.createElement('div');
+      col.className = isUser ? 'flex flex-col items-end' : 'flex flex-col items-start';
+      col.appendChild(bubble);
+      col.appendChild(m);
+      wrap.innerHTML = '';
+      wrap.appendChild(col);
+    }
+    history.appendChild(wrap);
+    history.scrollTop = history.scrollHeight;
+  }
+
+  send.addEventListener('click', async () => {
+    const message = messageEl.value.trim();
+    if (!message) return;
+    addBubble('user', message);
+    messageEl.value = '';
+    send.disabled = true;
+    const t0 = performance.now();
+    try {
+      const res = await fetch('/api/agent', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message, conversationId: cidEl.value })
+      });
+      const data = await res.json();
+      addBubble('ai', data.content || JSON.stringify(data),
+        `cid=${data.conversationId || cidEl.value} · ${(performance.now()-t0).toFixed(0)}ms`);
+    } catch (e) {
+      addBubble('ai', '에러: ' + e.message);
+    } finally {
+      send.disabled = false;
+      messageEl.focus();
+    }
+  });
+
+  messageEl.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') send.click();
+  });
+</script>
+</body>
+</html>
