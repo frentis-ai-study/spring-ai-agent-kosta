@@ -78,6 +78,46 @@ H2 파일(`./data/agentdb.mv.db`)과 벡터 저장소(`./data/vector-store.json`
 - [ ] step5: SafeGuard가 민감어를 차단하고 SSE 스트리밍이 정상 동작한다
 - [ ] step6: Actuator `/actuator/prometheus`에서 메트릭 확인, 모더레이션 차단 응답 확인
 
+## 데모 화면 (자동 캡처)
+
+각 step의 정적 UI는 `./gradlew bootRun` 후 http://localhost:8080 에서 확인할 수 있습니다. 아래는 각 step 진입 시 + 대표 시나리오 실행 후 자동 캡처된 모습입니다.
+
+### step1 — 단발 chat
+| 초기 | 응답 |
+|---|---|
+| ![](docs/screenshots/step1/01-initial.png) | ![](docs/screenshots/step1/02-response.png) |
+
+### step2 — 대화 이력 유지
+이름 입력 후 같은 conversationId로 회상.
+
+| 이름 입력 | 회상 |
+|---|---|
+| ![](docs/screenshots/step2/02-name-set.png) | ![](docs/screenshots/step2/03-name-recall.png) |
+
+### step3 — Tool Calling
+시나리오 버튼 클릭 한 번에 LLM이 OrderTools를 호출해 DB에서 주문을 조회.
+
+![](docs/screenshots/step3/02-tool-alice.png)
+
+### step4 — RAG
+정책 문서 인덱싱 후 환불 질문 → 정책 인용 답변.
+
+| 인덱싱 완료 | RAG 답변 |
+|---|---|
+| ![](docs/screenshots/step4/02-indexed.png) | ![](docs/screenshots/step4/03-rag-refund.png) |
+
+### step5 — 종합 Agent (Memory + RAG + Tool + SafeGuard)
+한 질문에서 Tool과 RAG가 함께 동작.
+
+![](docs/screenshots/step5/02-combined.png)
+
+### step6 — 운영 안정화
+finish_reason 표시, SafeGuard 차단 시 warning, /actuator 링크.
+
+| Tool | RAG | Memory 회상 | SafeGuard 차단 |
+|---|---|---|---|
+| ![](docs/screenshots/step6/03-tool-alice.png) | ![](docs/screenshots/step6/04-rag-refund.png) | ![](docs/screenshots/step6/05-memory-recall.png) | ![](docs/screenshots/step6/06-safeguard-blocked.png) |
+
 ## 라이선스 / 사용 안내
 
 본 저장소는 KOSTA 강의 수강생 학습용으로 작성되었으며, 운영 환경 적용 시에는 보안/SecurityContext 처리, 시크릿 관리, 모더레이션 정책을 환경에 맞게 보강하여야 합니다.
