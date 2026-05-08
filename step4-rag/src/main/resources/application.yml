@@ -46,3 +46,8 @@ management:
     web:
       exposure:
         include: health,info,metrics
+
+agent:
+  rag:
+    policies-path: ./data/policies
+    persist-path: ./data/vector-store.json

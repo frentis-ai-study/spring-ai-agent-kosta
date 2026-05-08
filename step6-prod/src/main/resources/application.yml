@@ -68,3 +68,8 @@ resilience4j:
       openai:
         max-attempts: 3
         wait-duration: 500ms
+
+agent:
+  rag:
+    policies-path: ./data/policies
+    persist-path: ./data/vector-store.json
