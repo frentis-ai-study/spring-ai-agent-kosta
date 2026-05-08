@@ -12,7 +12,7 @@
   - `spring-ai-bom` 1.1.5 import (Maven Central, milestone repo 불필요)
 - `src/main/resources/application.yml`
   - `spring.ai.openai.api-key` (`${OPENAI_API_KEY:}`)
-  - `spring.ai.openai.chat.options.model: gpt-4o-mini`
+  - `spring.ai.openai.chat.options.model: gpt-5.4-mini`
   - `spring.ai.openai.chat.options.temperature: 0.0`
 
 ## 변경 없음
