@@ -1,0 +1,33 @@
+# Gradle
+**/.gradle/
+**/build/
+**/out/
+
+# IDE
+.idea/
+*.iml
+*.iws
+*.ipr
+.vscode/
+.classpath
+.project
+.settings/
+.springBeans
+.sts4-cache/
+bin/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# 환경 변수 / 비밀
+.env
+.env.*
+!.env.example
+
+# Spring Boot
+HELP.md
+
+# 로그
+*.log
+logs/

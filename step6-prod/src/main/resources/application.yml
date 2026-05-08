@@ -1,0 +1,79 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: spring-ai-agent-kosta-step6
+
+  datasource:
+    url: jdbc:postgresql://localhost:5432/agentdb
+    username: agent
+    password: ${POSTGRES_PASSWORD:agent}
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    properties:
+      hibernate:
+        format_sql: true
+    show-sql: false
+
+  ai:
+    openai:
+      api-key: ${OPENAI_API_KEY:}
+      chat:
+        options:
+          model: gpt-4o-mini
+          temperature: 0.0
+      embedding:
+        options:
+          model: text-embedding-3-small
+
+    vectorstore:
+      pgvector:
+        index-type: HNSW
+        distance-type: COSINE_DISTANCE
+        dimensions: 1536
+        initialize-schema: true
+        schema-name: public
+        table-name: vector_store
+        max-document-batch-size: 1000
+
+    chat:
+      memory:
+        repository:
+          jdbc:
+            initialize-schema: always
+
+logging:
+  level:
+    org.springframework.ai: INFO
+    com.kosta.agent: DEBUG
+
+# 운영 모니터링 — Prometheus 메트릭 노출
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+  endpoint:
+    health:
+      show-details: when-authorized
+  metrics:
+    tags:
+      application: ${spring.application.name}
+
+# Resilience4j (코드 빈과 함께 application 단에서도 추가 메트릭 노출)
+resilience4j:
+  circuitbreaker:
+    instances:
+      openai:
+        register-health-indicator: true
+        sliding-window-size: 20
+        failure-rate-threshold: 50
+        wait-duration-in-open-state: 20s
+  retry:
+    instances:
+      openai:
+        max-attempts: 3
+        wait-duration: 500ms

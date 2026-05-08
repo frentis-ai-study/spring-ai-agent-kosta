@@ -1,0 +1,29 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: spring-ai-agent-kosta-step0
+
+  datasource:
+    url: jdbc:postgresql://localhost:5432/agentdb
+    username: agent
+    password: ${POSTGRES_PASSWORD:agent}
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    properties:
+      hibernate:
+        format_sql: true
+    show-sql: false
+
+logging:
+  level:
+    com.kosta.agent: DEBUG
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
