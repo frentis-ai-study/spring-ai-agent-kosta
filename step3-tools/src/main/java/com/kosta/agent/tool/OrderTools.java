@@ -46,6 +46,13 @@ public class OrderTools {
                 .orElse(null);
     }
 
+    @Tool(description = "전체 회원 목록을 조회한다. 관리자/운영 도구이며 모든 고객의 ID/이메일/이름/등급을 반환한다.")
+    public List<CustomerView> listAllCustomers() {
+        return customers.findAll().stream()
+                .map(c -> new CustomerView(c.getId(), c.getEmail(), c.getName(), c.getTier()))
+                .toList();
+    }
+
     @Tool(description = "고객 ID로 최근 주문 10건을 조회한다. callerCustomerId와 동일해야 한다.")
     public List<OrderView> getRecentOrders(
             @ToolParam(description = "조회 대상 고객 ID") Long customerId,
