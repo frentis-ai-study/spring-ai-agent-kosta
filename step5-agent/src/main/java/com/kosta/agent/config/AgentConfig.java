@@ -20,7 +20,7 @@ import java.util.List;
 
 /**
  * 종합 Agent ChatClient 빈.
- * Memory(JDBC) + RAG(pgvector) + Tools + SafeGuard + Logger 어드바이저 체인 구성.
+ * Memory(JDBC) + RAG(SimpleVectorStore) + Tools + SafeGuard + Logger 어드바이저 체인 구성.
  */
 @Configuration
 public class AgentConfig {
@@ -59,7 +59,7 @@ public class AgentConfig {
                 .build();
     }
 
-    /** pgvector 기반 RAG 어드바이저. */
+    /** SimpleVectorStore 기반 RAG 어드바이저. */
     @Bean
     public RetrievalAugmentationAdvisor retrievalAugmentationAdvisor(VectorStore vectorStore) {
         return RetrievalAugmentationAdvisor.builder()

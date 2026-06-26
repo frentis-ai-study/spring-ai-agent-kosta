@@ -30,7 +30,7 @@ dependencies {
     // Spring AI - Chat (OpenAI)
     implementation("org.springframework.ai:spring-ai-starter-model-openai")
 
-    // Spring AI - Vector Store (pgvector)
+    // Spring AI - Vector Store: SimpleVectorStore (spring-ai-core 내장, 별도 스타터 불필요)
     
 
     // Spring AI - Chat Memory (JDBC)
