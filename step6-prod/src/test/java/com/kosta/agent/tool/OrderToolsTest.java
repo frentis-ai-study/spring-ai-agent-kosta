@@ -4,6 +4,7 @@ import com.kosta.agent.domain.Customer;
 import com.kosta.agent.domain.CustomerRepository;
 import com.kosta.agent.domain.Order;
 import com.kosta.agent.domain.OrderRepository;
+import com.kosta.agent.domain.RefundRequestRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -28,13 +29,15 @@ class OrderToolsTest {
 
     private CustomerRepository customers;
     private OrderRepository orders;
+    private RefundRequestRepository refunds;
     private OrderTools tools;
 
     @BeforeEach
     void setUp() {
         customers = mock(CustomerRepository.class);
         orders = mock(OrderRepository.class);
-        tools = new OrderTools(customers, orders);
+        refunds = mock(RefundRequestRepository.class);
+        tools = new OrderTools(customers, orders, refunds);
     }
 
     private Order order(Long id, Long customerId, String status) {

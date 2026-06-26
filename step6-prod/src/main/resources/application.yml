@@ -36,6 +36,14 @@ spring:
           jdbc:
             initialize-schema: always
 
+    # MCP는 기본 실행에서 꺼 둔다 (의존성은 있으나 autoconfig 비활성).
+    # MCP 실습 시 `--spring.profiles.active=mcp`로 application-mcp.yml을 활성화한다.
+    mcp:
+      server:
+        enabled: false
+      client:
+        enabled: false
+
 logging:
   level:
     org.springframework.ai: INFO

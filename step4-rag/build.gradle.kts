@@ -18,7 +18,7 @@ repositories {
     mavenCentral()
 }
 
-extra["springAiVersion"] = "1.1.5"
+extra["springAiVersion"] = "1.1.7"
 
 dependencies {
     // Spring Boot

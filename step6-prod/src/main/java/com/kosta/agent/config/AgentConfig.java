@@ -1,6 +1,7 @@
 package com.kosta.agent.config;
 
 import com.kosta.agent.advisor.ModerationInputAdvisor;
+import com.kosta.agent.tool.CatalogTools;
 import com.kosta.agent.tool.OrderTools;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.client.advisor.MessageChatMemoryAdvisor;
@@ -84,7 +85,8 @@ public class AgentConfig {
             ChatMemory chatMemory,
             RetrievalAugmentationAdvisor ragAdvisor,
             ModerationInputAdvisor moderationAdvisor,
-            OrderTools orderTools) {
+            OrderTools orderTools,
+            CatalogTools catalogTools) {
 
         SafeGuardAdvisor safeGuard = SafeGuardAdvisor.builder()
                 .sensitiveWords(List.of("주민등록번호", "신용카드번호", "비밀번호"))
@@ -99,7 +101,7 @@ public class AgentConfig {
                         safeGuard,
                         new SimpleLoggerAdvisor()
                 )
-                .defaultTools(orderTools)
+                .defaultTools(orderTools, catalogTools)
                 .build();
     }
 }

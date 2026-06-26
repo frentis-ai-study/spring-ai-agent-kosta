@@ -56,6 +56,41 @@ export OPENAI_API_KEY=sk-...
 - 정상 응답 시 `finishReason: stop`이, 토큰 한도 초과 시 `warning` 키가 노출되는지 응답 페이로드 확인
 - `curl http://localhost:8080/actuator/prometheus | grep -E "openai|resilience4j"`로 Retry/CircuitBreaker 메트릭 노출 확인
 
+## 추가 실습 예제 (도구 확장 · 에이전트 패턴 · MCP)
+
+실제 고객 지원에 가까운 도구와 에이전트(워크플로우) 패턴, MCP 연동 예제를 포함합니다.
+
+### 확장 도구 (@Tool)
+
+| 도구 | 역할 |
+|------|------|
+| `checkInventory` | 상품명 키워드로 재고·가격 조회 (`CatalogTools`) |
+| `trackShipment` | 주문 상태 기반 배송 진행·예상 도착 안내 |
+| `requestRefund` | 배송 완료 건 반품 접수, 미배송은 취소 안내 (상태별 다단계 처리, `refund_requests`에 기록) |
+
+```bash
+# 재고 확인 (시드에서 USB-C 허브는 품절)
+curl -X POST http://localhost:8080/api/agent -H 'Content-Type: application/json' \
+  -d '{"conversationId":"c1","message":"USB-C 허브 재고 있나요?"}'
+```
+
+### 에이전트 패턴 엔드포인트
+
+| 엔드포인트 | 패턴 | 설명 |
+|-----------|------|------|
+| `POST /api/patterns/route` | Routing | 문의를 ORDER·POLICY·CHITCHAT로 분류한 뒤 전담 처리기로 분기 |
+| `POST /api/patterns/refine` | Evaluator-Optimizer | 응답 초안 생성, 기준 평가, 미달 시 재생성(최대 3회) |
+
+두 패턴 모두 별도 인프라 없이 `ChatClient` 조합만으로 동작합니다.
+
+### MCP 연동 (선택, mcp 프로파일)
+
+```bash
+./gradlew bootRun --args='--spring.profiles.active=mcp'
+```
+
+우리 주문 도구(`OrderMcpTools`의 `@McpTool`)가 `http://localhost:8080/sse`로 노출되어 외부 MCP 호스트(Claude Desktop, 사내 다른 Agent 등)가 사용할 수 있습니다. 외부 MCP 서버의 도구를 소비하려면 `application-mcp.yml`의 `mcp.client`를 켜고 연결을 등록합니다. 기본 실행에서는 MCP가 꺼져 있어 영향이 없습니다.
+
 ## 운영 가이드 5가지 체크포인트
 
 1. **메트릭** — `curl http://localhost:8080/actuator/prometheus | grep openai`로 CircuitBreaker/Retry 메트릭 확인
