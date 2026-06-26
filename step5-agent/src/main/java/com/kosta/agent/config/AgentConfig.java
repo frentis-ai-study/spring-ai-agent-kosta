@@ -9,6 +9,7 @@ import org.springframework.ai.chat.memory.MessageWindowChatMemory;
 import org.springframework.ai.chat.memory.repository.jdbc.JdbcChatMemoryRepository;
 import org.springframework.ai.chat.client.advisor.MessageChatMemoryAdvisor;
 import org.springframework.ai.rag.advisor.RetrievalAugmentationAdvisor;
+import org.springframework.ai.rag.generation.augmentation.ContextualQueryAugmenter;
 import org.springframework.ai.rag.retrieval.search.VectorStoreDocumentRetriever;
 import org.springframework.ai.embedding.EmbeddingModel;
 import org.springframework.ai.vectorstore.SimpleVectorStore;
@@ -68,6 +69,11 @@ public class AgentConfig {
                         // 한국어 임베딩(text-embedding-3-small)에서는 cosine 유사도가 낮게 나오는 경향이 있어 0.3 권장
                         .similarityThreshold(0.3)
                         .topK(4)
+                        .build())
+                // 정책 문서에 없는 질문(주문 조회 등)도 Tool Calling으로 처리되도록 빈 컨텍스트를 허용한다.
+                // 기본값(false)이면 관련 문서가 없을 때 "답변 불가"로 단락시켜 도구 호출을 막는다.
+                .queryAugmenter(ContextualQueryAugmenter.builder()
+                        .allowEmptyContext(true)
                         .build())
                 .build();
     }
