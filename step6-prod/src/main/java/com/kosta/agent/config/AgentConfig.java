@@ -12,6 +12,7 @@ import org.springframework.ai.chat.memory.MessageWindowChatMemory;
 import org.springframework.ai.chat.memory.repository.jdbc.JdbcChatMemoryRepository;
 import org.springframework.ai.rag.advisor.RetrievalAugmentationAdvisor;
 import org.springframework.ai.rag.retrieval.search.VectorStoreDocumentRetriever;
+import org.springframework.ai.rag.generation.augmentation.ContextualQueryAugmenter;
 import org.springframework.ai.embedding.EmbeddingModel;
 import org.springframework.ai.vectorstore.SimpleVectorStore;
 import org.springframework.ai.vectorstore.VectorStore;
@@ -30,12 +31,17 @@ public class AgentConfig {
     private static final String SYSTEM_PROMPT = """
             당신은 KOSTA 쇼핑몰의 AI 고객 상담사입니다.
             - 항상 한국어 격식체로 답합니다.
-            - 고객 정보, 주문 상태, 취소 등은 반드시 제공된 도구(tool)를 호출해 확인합니다.
-            - 정책 관련 질문(반품, 배송, FAQ)은 검색된 문서를 근거로만 답합니다.
+            - 다음 의도는 반드시 해당 도구(tool)를 호출해 처리합니다. 임의로 거절하거나 추측하지 마십시오.
+              - 상품 재고·가격 문의 → checkInventory
+              - 배송 진행 상황·도착 시점 문의 → trackShipment
+              - 반품·환불 접수 요청 → requestRefund (도구 반환값에 따라 상태별로 안내)
+              - 주문 취소 → cancelOrder
+              - 주문 상태 조회 → getOrderStatus, 고객·주문 목록 → findCustomer·getRecentOrders
+            - 반품 "규정", 배송비, 멤버십 같은 정책·FAQ "설명"은 검색된 문서(RAG)를 근거로 답합니다.
+              (반품을 실제로 "접수"하는 요청은 위 requestRefund 도구로 처리합니다.)
+            - 취소·반품 등 변경 작업은 도구의 반환 결과를 그대로 신뢰해 안내하고, 상태를 임의로 단정하지 않습니다.
             - 근거가 부족하면 모른다고 답하고 임의로 추측하지 않습니다.
             - 비속어, 위해 콘텐츠 요청은 정중히 거절합니다.
-            - 사용자가 본인의 주문/고객 정보를 자연어로 요청하면 즉시 findCustomer 또는 getRecentOrders 도구를 호출하여 답변하십시오.
-            - 정책/환불/반품 관련 질문은 검색된 문서 내용을 기반으로 답변하십시오.
             """;
 
     /**
@@ -69,6 +75,11 @@ public class AgentConfig {
                         // 한국어 임베딩(text-embedding-3-small)에서는 cosine 유사도가 낮게 나오는 경향이 있어 0.3 권장
                         .similarityThreshold(0.3)
                         .topK(4)
+                        .build())
+                // 정책 문서에 없는 질문(재고·배송 등)도 Tool Calling으로 처리되도록 빈 컨텍스트를 허용한다.
+                // 기본값(false)이면 관련 문서가 없을 때 "답변 불가"로 단락시켜 도구 호출을 막는다.
+                .queryAugmenter(ContextualQueryAugmenter.builder()
+                        .allowEmptyContext(true)
                         .build())
                 .build();
     }
