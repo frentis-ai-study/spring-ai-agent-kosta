@@ -2,7 +2,7 @@
 
 `step6-prod`는 Chat · Tool Calling · RAG · Memory · SafeGuard에 운영 안정화(Resilience4j · 모더레이션 · 메트릭)와 신규 예제(재고 · 배송 · 반품 도구, 에이전트 패턴, MCP)까지 결합한 완성본입니다. 이 문서는 실행부터 각 기능 활용까지 전 과정을 다룹니다.
 
-> 아래 "실제 결과" 블록은 OpenAI(gpt-5.4-mini) 라이브 호출로 받은 실제 응답입니다.
+> 스크린샷과 "실제 결과" 블록은 OpenAI(gpt-5.4-mini) 라이브 호출로 받은 실제 응답입니다.
 
 ## 0. 실행
 
@@ -17,8 +17,7 @@ curl -X POST http://localhost:8080/api/index   # RAG 정책 문서 인덱싱(최
 
 웹 UI는 `http://localhost:8080` 에서 자동 서빙됩니다(자연어 채팅 입력 + 빠른 시나리오 버튼).
 
-![초기 화면](docs/screenshots/step6/01-initial.png)
-![정책 인덱싱 후](docs/screenshots/step6/02-indexed.png)
+![초기 화면](docs/screenshots/usage/01-initial.png)
 
 시드 데이터: 고객 alice(GOLD)·bob(BASIC), 주문 4건(1번 기계식 키보드 DELIVERED, 2번 27인치 모니터 SHIPPED, 3번 USB-C 허브 PAID, 4번 노이즈캔슬링 헤드폰 PENDING), 상품 5종(USB-C 허브는 품절).
 
@@ -26,7 +25,7 @@ curl -X POST http://localhost:8080/api/index   # RAG 정책 문서 인덱싱(최
 
 ## 1. 화면(채팅) 기능
 
-각 기능은 `POST /api/agent` (UI 입력창)로 호출합니다. 형식: 무엇을 하는가 → 사용 예 → 실제 결과 → 관찰 포인트.
+각 기능은 `POST /api/agent`(UI 입력창)로 호출합니다. 형식: 무엇을 하는가 → 사용 예 → 결과 → 관찰 포인트.
 
 ### 1.1 주문·고객 조회 (Tool Calling)
 
@@ -41,65 +40,54 @@ curl -X POST http://localhost:8080/api/index   # RAG 정책 문서 인덱싱(최
 
 - **무엇**: 상품명 키워드로 재고·가격을 조회합니다.
 - **사용**: "USB-C 허브 재고 있나요?" / "기계식 키보드 재고랑 가격 알려줘"
-- **실제 결과**:
-  ```
-  USB-C 허브는 현재 재고가 없습니다. 가격은 58,000원입니다.
-  ```
-  ```
-  기계식 키보드 — 가격 129,000원, 재고 수량 12개, 재고 상태: 구매 가능
-  ```
-- **관찰**: 시드에서 USB-C 허브를 품절(0)로 두어 "재고 없음" 흐름을 보여줍니다.
+
+![재고 품절 — USB-C 허브](docs/screenshots/usage/02-inventory-out.png)
+![재고 보유 — 기계식 키보드](docs/screenshots/usage/03-inventory-ok.png)
+
+- **관찰**: 시드에서 USB-C 허브를 품절(0)로 두어 "재고 없음"(58,000원) 흐름을, 기계식 키보드는 "12개, 구매 가능"(129,000원) 흐름을 보여줍니다.
 
 ### 1.3 배송 추적 (trackShipment) — 신규
 
 - **무엇**: 주문 상태 기반으로 배송 진행·예상 도착을 안내합니다.
 - **사용**: "2번 주문 배송 어디까지 왔나요?"
-- **실제 결과**:
-  ```
-  2번 주문은 배송 중이며, 예상 도착은 영업일 기준 1~2일 이내입니다.
-  ```
+
+![배송 추적 — 2번 주문](docs/screenshots/usage/04-shipment.png)
+
 - **관찰**: PENDING/PAID(출고 전), SHIPPED(배송 중), DELIVERED(완료), CANCELLED(취소)에 따라 안내가 달라집니다.
 
 ### 1.4 반품 접수 (requestRefund) — 신규
 
 - **무엇**: 배송 완료 건의 반품을 접수하고, 상태별로 다르게 처리합니다.
 - **사용**: "1번 주문을 단순 변심으로 반품 접수해줘"
-- **실제 결과**:
-  ```
-  반품이 접수되었습니다. 접수번호는 1번이며, 사유는 단순 변심입니다.
-  정책 검토 후 영업일 기준 3일 내 처리됩니다.
-  ```
-- **관찰**: 미배송(PENDING/PAID) 주문은 "반품 대신 주문 취소가 적합하다"고 안내하고, 배송 중(SHIPPED)은 "수령 후 접수"를 안내합니다. 도구가 상태를 판단해 분기합니다.
+
+![반품 접수 — 1번 주문](docs/screenshots/usage/05-refund.png)
+
+- **관찰**: 배송 완료(1번)는 접수번호와 함께 접수됩니다. 미배송(PENDING/PAID) 주문은 "취소가 적합하다"고 안내하고, 배송 중(SHIPPED)은 "수령 후 접수"를 안내합니다. 도구가 상태를 판단해 분기합니다.
 
 ### 1.5 정책 답변 (RAG)
 
 - **무엇**: 인덱싱된 정책 문서를 근거로 답변합니다.
 - **사용**: "단순 변심 반품 시 배송비는 누가 부담하나요?"
 
-![RAG — 환불 정책](docs/screenshots/step6/04-rag-refund.png)
+![RAG — 환불 배송비 정책](docs/screenshots/usage/06-rag-policy.png)
 
-- **실제 결과**:
-  ```
-  단순 변심 반품 시 왕복 배송비 6,000원은 고객님께서 부담하셔야 합니다.
-  VIP 회원의 경우에는 단순 변심 반품도 무료로 처리됩니다.
-  ```
-- **관찰**: 재고·배송 같은 도구 영역과 달리, 정책 "설명"은 문서 근거로 답합니다(도구와 RAG가 공존).
+- **관찰**: 재고·배송 같은 도구 영역과 달리, 정책 "설명"은 문서 근거로 답합니다(왕복 배송비 6,000원 고객 부담, VIP 무료). 도구와 RAG가 공존합니다.
 
 ### 1.6 대화 메모리 (Memory)
 
 - **무엇**: `conversationId`별로 이전 대화를 기억합니다(임베디드 H2에 JDBC 영속).
 - **사용**: "제 이름은 윤성열입니다. 기억해 주세요." → (같은 대화에서) "제 이름이 뭐였죠?"
 
-![메모리 — 이름 회상](docs/screenshots/step6/05-memory-recall.png)
+![메모리 — 이름 회상](docs/screenshots/usage/09-memory-recall.png)
 
-- **관찰**: 서버를 재시작해도 H2 파일에 남아 회상됩니다.
+- **관찰**: 같은 conversationId에서 이전 발화를 회상합니다. 서버를 재시작해도 H2 파일에 남아 유지됩니다.
 
 ### 1.7 콘텐츠 안전 (SafeGuard · Moderation)
 
 - **무엇**: 민감정보·위해 요청을 입력 단계에서 차단합니다.
 - **사용**: "제 주민등록번호는 901010-1234567 입니다."
 
-![SafeGuard 차단](docs/screenshots/step6/06-safeguard-blocked.png)
+![SafeGuard 차단](docs/screenshots/usage/07-safeguard.png)
 
 - **관찰**: `ModerationInputAdvisor`가 LLM 호출 전에 차단하고 경고를 표시합니다.
 
@@ -135,12 +123,7 @@ curl -X POST http://localhost:8080/api/patterns/refine \
   -H 'Content-Type: application/json' -d '{"message":"배송이 일주일 늦어진 고객에게 사과 안내문을 써줘"}'
 ```
 
-실제 결과(요지): `attempts`와 초안 `history`를 함께 반환합니다. 기준을 한 번에 통과하면 `attempts=1`, 미달이면 피드백을 반영해 재작성한 이력이 쌓입니다.
-
-```
-"불편을 드려 대단히 죄송합니다. 배송이 예정일보다 일주일 늦어진 점 깊이 사과드립니다.
- 현재 배송 상황을 확인하여 최대한 신속하게 받아보실 수 있도록 조치하겠습니다 ..."
-```
+`attempts`(시도 횟수)와 초안 `history`를 함께 반환합니다. 기준을 한 번에 통과하면 `attempts=1`, 미달이면 피드백을 반영해 재작성한 이력이 쌓입니다.
 
 ---
 
@@ -157,12 +140,10 @@ MCP는 기본 실행에서 꺼져 있습니다. 다음으로 활성화합니다.
 
 ---
 
-## 부록: 신규 화면 스크린샷 생성
+## 부록: 스크린샷 재생성
 
-1.2~1.4(재고·배송·반품)와 패턴의 UI 스크린샷은 디스플레이가 있는 환경에서 아래 스크립트로 한 번에 생성할 수 있습니다(헤드리스 CI에서는 브라우저 캡처가 불안정합니다).
+이 문서의 화면 스크린샷(`docs/screenshots/usage/`)은 아래 스크립트로 다시 생성할 수 있습니다(앱 실행 + agent-browser 필요).
 
 ```bash
-# 앱을 먼저 띄운 뒤(0장 참고)
 bash scripts/capture-usage-screenshots.sh
-# 결과: docs/screenshots/usage/*.png
 ```
