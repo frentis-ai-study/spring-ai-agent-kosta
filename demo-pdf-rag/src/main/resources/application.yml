@@ -1,0 +1,30 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: demo-pdf-rag
+  servlet:
+    multipart:
+      max-file-size: 20MB
+      max-request-size: 20MB
+  ai:
+    openai:
+      api-key: ${OPENAI_API_KEY:}
+      chat:
+        options:
+          model: gpt-5.4-mini
+          temperature: 0.3
+      embedding:
+        options:
+          model: text-embedding-3-small
+
+logging:
+  level:
+    org.springframework.ai: INFO
+    com.kosta.demo.pdfrag: DEBUG
+
+agent:
+  rag:
+    persist-path: ./data/vector-store.json
+    manifest-path: ./data/indexed-files.json
