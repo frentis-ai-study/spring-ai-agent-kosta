@@ -1,0 +1,8 @@
+spring:
+  ai:
+    openai:
+      api-key: test-key-not-used-in-unit-tests
+agent:
+  rag:
+    persist-path: ./build/test-data/vector-store.json
+    manifest-path: ./build/test-data/indexed-files.json
